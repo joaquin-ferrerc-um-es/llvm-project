@@ -1,0 +1,8 @@
+int main(int argc, char* argv[]) {
+  int a = 10;
+  if( argc == 3)
+      a = 11;
+  else
+      a++;
+  return 0;
+}
