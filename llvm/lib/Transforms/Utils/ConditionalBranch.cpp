@@ -10,7 +10,7 @@ std::set<Value*> ConditionalBranchPass::getDependencies(Value *v) {
     for (unsigned int i = 0; i < I->getNumOperands(); i++) {
       Value *v2 = I->getOperand(i);
       if (strchr(v2->getNameOrAsOperand().c_str(), '%')) {
-        errs () << v2->getNameOrAsOperand() << "\n";
+        // errs () << v2->getNameOrAsOperand() << "\n";
         deps.insert(v2);
         std::set<Value*> aux = getDependencies(v2);
         deps.merge(aux);
@@ -26,13 +26,13 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
   for (Instruction &I : instructions(F)) {
     if (I.isTerminator()) {
       if (strcmp(I.getOpcodeName(), "br") == 0) {
-        if (CmpInst *cp = dyn_cast<CmpInst>(I.getPrevNode())) {
-          errs() << cp->getPredicate() << '\n';
+        if (Instruction *cp = I.getPrevNode()) {
+          // errs() << cp->getPredicate() << '\n';
           std::set<Value*> deps;
           for (unsigned int i = 0; i < cp->getNumOperands(); i++) {
             Value *v = cp->getOperand(i);
             if (strchr(v->getNameOrAsOperand().c_str(), '%')) {
-              errs () << v->getNameOrAsOperand() << "\n";
+              // errs () << v->getNameOrAsOperand() << "\n";
               deps.insert(v);
               std::set<Value*> aux = getDependencies(v);
               deps.merge(aux);
