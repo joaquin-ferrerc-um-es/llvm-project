@@ -13,7 +13,7 @@ class ConditionalBranchPass : public PassInfoMixin<ConditionalBranchPass> {
 private:
   std::map<Instruction*, std::set<Value*>> conditionalBranches;
 
-  std::set<Value*> getDependencies(Value *v);
+  std::set<Value*> getDependencies(Value *v, std::set<Value*> prevDeps);
 
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
