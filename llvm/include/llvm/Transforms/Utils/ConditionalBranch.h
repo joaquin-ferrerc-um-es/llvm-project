@@ -6,6 +6,9 @@
 #include "llvm/IR/InstrTypes.h"
 #include <set>
 #include <map>
+#include <cmath>
+
+#define STAT_SIZE 11
 
 namespace llvm {
 
@@ -17,6 +20,10 @@ private:
 
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+  int correlationStats[STAT_SIZE] = {0};
+  int meanCorrelation = 0;
+  int totalBranches = 0;
+  int numNonDepBranches = 0;
 };
 
 } // namespace llvm

@@ -57,6 +57,12 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
 
   for(std::pair<Instruction*, std::set<Value*>> p : conditionalBranches) {
     std::set<Value*> vals = p.second;
+    if(vals.size() > 0){
+      meanCorrelation += vals.size();
+      totalBranches++;
+    }else{
+      numNonDepBranches++;
+    }
     std::map<Instruction*, std::set<Value*>>::iterator it = conditionalBranches.begin()++;
     while ((it != conditionalBranches.end()) && (p.first != it->first)) {
       it++;
@@ -67,24 +73,47 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
       std::set<Value*> intersection;
       std::set_intersection(vals.begin(), vals.end(), vals2.begin(), vals2.end(), std::inserter(intersection, intersection.begin()));
       if (!intersection.empty()) {
+        float correlation1 = (float)intersection.size()/(float)vals.size();
+        float correlation2 = (float)intersection.size()/(float)vals2.size();
+        int pos = ceil(std::min(correlation1, correlation2)*10);
+        correlationStats[pos]++;
         if (!printed) {
           errs() << "\n\n\n" << F.getName() << "\n";
           printed = true;
         }
         errs() << "\tInstructions:\n\t\t"; 
-        //p.first->print(errs());
-        errs() << " " << vals.size();
+        p.first->print(errs());
+        // errs() << " " << vals.size();
         errs() << "\n\tand\n\t\t";
-        //it->first->print(errs());
-        errs() << " " << vals2.size();
-        //errs() << "\n\thave this common dependencies:\n\t\t\t";
+        it->first->print(errs());
+        // errs() << " " << vals2.size();
+        errs() << "\n\thave this common dependencies:\n\t\t\t";
         for( Value *v : intersection) {
-          //errs () << v->getNameOrAsOperand() << " ";
+          errs () << v->getNameOrAsOperand() << " ";
         }
         errs() << "\n\n";
+      }else{
+        correlationStats[0]++;
       }
     }
   }
+
+  errs() << "Correlation of the benchmark branches:\n\n";
+  errs() << "0\%;" << correlationStats[0] << ";\n";
+
+  int min = 1;
+  int max = 10;
+  for (int i = 1; i < STAT_SIZE; i++) {
+    errs() << min <<"\%-" << max << "\%;" << correlationStats[i] << "\n";
+    min += 10;
+    max += 10;
+  }
+
+  errs() << "\nMean of dependencies per branch: " << (float)meanCorrelation/(float)totalBranches;
+
+  errs() << "\nPercentaje of branches with dependencies: " << (float)totalBranches/(float)(numNonDepBranches+ totalBranches);
+
+  errs() << "\n\n\n";
 
   return PreservedAnalyses::all();
 }
