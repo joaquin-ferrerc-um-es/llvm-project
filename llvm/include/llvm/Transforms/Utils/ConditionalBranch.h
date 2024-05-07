@@ -23,7 +23,6 @@ public:
   int correlationStats[STAT_SIZE] = {0};
   int meanCorrelation = 0;
   int totalBranches = 0;
-  int numNonDepBranches = 0;
 };
 
 } // namespace llvm

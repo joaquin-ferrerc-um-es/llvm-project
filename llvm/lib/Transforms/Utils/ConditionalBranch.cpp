@@ -9,7 +9,8 @@ std::set<Value*> ConditionalBranchPass::getDependencies(Value *v, std::set<Value
     Instruction *I = cast<Instruction>(v);
     for (unsigned int i = 0; i < I->getNumOperands(); i++) {
       Value *v2 = I->getOperand(i);
-      if (strchr(v2->getNameOrAsOperand().c_str(), '%')) {
+      if (!isa<Constant>(v2) && !isa<Function>(v2)) {
+        // I->print(errs());
         if (prevDeps.find(v2) == prevDeps.end()) {
           // errs () << v2->getNameOrAsOperand() << "\n";
           std::set<Value*> deps2 = prevDeps;
@@ -41,7 +42,8 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
             std::set<Value*> deps;
             for (unsigned int i = 0; i < cp->getNumOperands(); i++) {
               Value *v = cp->getOperand(i);
-              if (strchr(v->getNameOrAsOperand().c_str(), '%')) {
+              if (!isa<Constant>(v) && !isa<Function>(v)) {
+                // cp->print(errs());
                 // errs () << v->getNameOrAsOperand() << "\n";
                 deps.insert(v);
                 std::set<Value*> aux = getDependencies(v, deps);
@@ -55,18 +57,13 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
     }
   }
 
-  for(std::pair<Instruction*, std::set<Value*>> p : conditionalBranches) {
-    std::set<Value*> vals = p.second;
-    if(vals.size() > 0){
-      meanCorrelation += vals.size();
-      totalBranches++;
-    }else{
-      numNonDepBranches++;
-    }
-    std::map<Instruction*, std::set<Value*>>::iterator it = conditionalBranches.begin()++;
-    while ((it != conditionalBranches.end()) && (p.first != it->first)) {
-      it++;
-    }
+  std::map<Instruction*, std::set<Value*>>::iterator p = conditionalBranches.begin();
+  while (p != conditionalBranches.end()) {
+    std::set<Value*> vals = p->second;
+    meanCorrelation += vals.size();
+    totalBranches++;
+    assert(vals.size() > 0);
+    std::map<Instruction*, std::set<Value*>>::iterator it = conditionalBranches.begin();
     it++;
     for (; it != conditionalBranches.end(); it++) {
       std::set<Value*> vals2 = it->second;
@@ -82,7 +79,7 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
           printed = true;
         }
         errs() << "\tInstructions:\n\t\t"; 
-        p.first->print(errs());
+        p->first->print(errs());
         // errs() << " " << vals.size();
         errs() << "\n\tand\n\t\t";
         it->first->print(errs());
@@ -96,10 +93,12 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
         correlationStats[0]++;
       }
     }
+    conditionalBranches.erase(p);
+    p = conditionalBranches.begin();
   }
 
   errs() << "Correlation of the benchmark branches:\n\n";
-  errs() << "0\%;" << correlationStats[0] << ";\n";
+  errs() << "0\%;" << correlationStats[0] << "\n";
 
   int min = 1;
   int max = 10;
@@ -110,8 +109,6 @@ PreservedAnalyses ConditionalBranchPass::run(Function &F, FunctionAnalysisManage
   }
 
   errs() << "\nMean of dependencies per branch: " << (float)meanCorrelation/(float)totalBranches;
-
-  errs() << "\nPercentaje of branches with dependencies: " << (float)totalBranches/(float)(numNonDepBranches+ totalBranches);
 
   errs() << "\n\n\n";
 
